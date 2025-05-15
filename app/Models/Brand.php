@@ -9,26 +9,32 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
-class Category extends Model
+class Brand extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $primaryKey = 'id';
+    protected $keyType = 'string';
+    public $incrementing = false;
+
     protected $fillable = [
-        'categoryName',
+        'brand_name',
         'slug',
         'image_path',
-        'parent_id',
-        'approved_by',
         'status',
         'description',
         'sort_order',
         'meta_title',
         'meta_description',
         'meta_keywords',
+        'approved_by',
+        'website_url',
+        'social_links',
     ];
 
     protected $casts = [
         'status' => 'boolean',
+        'social_links' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -39,39 +45,23 @@ class Category extends Model
      */
     protected static function booted()
     {
-        static::created(function ($category) {
-            Log::info('Category created: ' . $category->categoryName);
+        static::created(function ($brand) {
+            Log::info('Brand created: ' . $brand->brand_name);
         });
 
-        static::updated(function ($category) {
-            if ($category->wasChanged(['status', 'categoryName', 'slug'])) {
-                Log::info('Category updated: ' . $category->categoryName);
+        static::updated(function ($brand) {
+            if ($brand->wasChanged(['status', 'brand_name', 'slug'])) {
+                Log::info('Brand updated: ' . $brand->brand_name);
             }
         });
 
-        static::deleting(function ($category) {
-            $category->children()->update(['parent_id' => null]);
+        static::deleting(function ($brand) {
+            $brand->products()->update(['brand_id' => null]);
         });
     }
 
     /**
-     * Get the parent category.
-     */
-    public function parent()
-    {
-        return $this->belongsTo(Category::class, 'parent_id');
-    }
-
-    /**
-     * Get the child categories.
-     */
-    public function children()
-    {
-        return $this->hasMany(Category::class, 'parent_id');
-    }
-
-    /**
-     * Get the user who approved the category.
+     * Get the user who approved the brand.
      */
     public function approvedBy()
     {
@@ -79,15 +69,15 @@ class Category extends Model
     }
 
     /**
-     * Get the products associated with the category.
+     * Get the products associated with the brand.
      */
     public function products()
     {
-        return $this->hasMany(Product::class, 'category_id');
+        return $this->hasMany(Product::class, 'brand_id');
     }
 
     /**
-     * Scope a query to only include active categories.
+     * Scope a query to only include active brands.
      */
     public function scopeActive($query)
     {
@@ -95,15 +85,7 @@ class Category extends Model
     }
 
     /**
-     * Scope a query to only include root categories.
-     */
-    public function scopeRoot($query)
-    {
-        return $query->whereNull('parent_id');
-    }
-
-    /**
-     * Scope a query to only include approved categories.
+     * Scope a query to only include approved brands.
      */
     public function scopeApproved($query)
     {
@@ -116,54 +98,40 @@ class Category extends Model
     public static function rules()
     {
         return [
-            'categoryName' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:categories,slug',
+            'brand_name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:brands,slug',
             'image_path' => 'nullable|string',
-            'parent_id' => 'nullable|exists:categories,id',
-            'approved_by' => 'nullable|exists:users,id',
             'status' => 'required|boolean',
             'description' => 'nullable|string',
             'sort_order' => 'nullable|integer|min:0',
             'meta_title' => 'nullable|string|max:100',
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string',
+            'approved_by' => 'nullable|exists:users,id',
+            'website_url' => 'nullable|url',
+            'social_links' => 'nullable|array',
         ];
     }
 
     /**
-     * Generate a unique slug for the category.
+     * Generate a unique slug for the brand.
      */
     public function generateSlug(): void
     {
-        $this->slug = Str::slug($this->categoryName);
+        $this->slug = Str::slug($this->brand_name);
         $originalSlug = $this->slug;
         $count = 1;
-        while (Category::where('slug', $this->slug)->where('id', '!=', $this->id)->exists()) {
+        while (Brand::where('slug', $this->slug)->where('id', '!=', $this->id)->exists()) {
             $this->slug = $originalSlug . '-' . $count++;
         }
     }
 
     /**
-     * Check if the category is active.
+     * Check if the brand is active.
      */
     public function isActive(): bool
     {
         return $this->status === true;
-    }
-
-    /**
-     * Get the category hierarchy tree.
-     */
-    public function getCategoryTree(): array
-    {
-        $tree = [];
-        $tree[] = $this->categoryName;
-        $parent = $this->parent;
-        while ($parent) {
-            $tree[] = $parent->categoryName;
-            $parent = $parent->parent;
-        }
-        return array_reverse($tree);
     }
 
     /**
@@ -175,10 +143,10 @@ class Category extends Model
     }
 
     /**
-     * Get the formatted category name.
+     * Get the formatted brand name.
      */
     public function getFormattedNameAttribute(): string
     {
-        return ucfirst($this->categoryName);
+        return ucfirst($this->brand_name);
     }
 }

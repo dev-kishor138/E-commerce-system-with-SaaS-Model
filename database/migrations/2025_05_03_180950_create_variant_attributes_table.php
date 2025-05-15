@@ -11,17 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('notifications', function (Blueprint $table) {
+        Schema::create('variant_attributes', function (Blueprint $table) {
             $table->engine = 'InnoDB';
             $table->uuid('id')->primary();
-            $table->string('type')->index();
-            $table->morphs('notifiable', 'notifiable_index');
-            $table->text('data');
             $table->uuid('tenant_id')->nullable();
-            $table->timestamp('read_at')->nullable()->index();
-            $table->timestamp('expires_at')->nullable();
+            $table->unsignedBigInteger('product_id');
+            $table->string('attribute_name', 100);
+            $table->text('attribute_value');
             $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('notifications');
+        Schema::dropIfExists('variant_attributes');
     }
 };

@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_details', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->uuid('id')->primary();
             $table->uuid('tenant_id');
             $table->uuid('user_id')->unique();

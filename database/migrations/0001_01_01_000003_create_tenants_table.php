@@ -16,6 +16,7 @@ class CreateTenantsTable extends Migration
     public function up(): void
     {
         Schema::create('tenants', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->uuid('id')->primary();
             $table->string('name')->unique();
             $table->string('domain')->unique()->nullable();

@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->uuid('id')->primary();
             $table->string('name', 100)->index();
             $table->string('email', 255)->unique();
@@ -25,7 +26,7 @@ return new class extends Migration
             $table->string('last_login_ip', 45)->nullable();
             $table->string('preferred_language', 5)->nullable();
             $table->string('timezone', 50)->nullable();
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
+            // $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
             $table->rememberToken();
             $table->softDeletes();
             $table->timestamps();
